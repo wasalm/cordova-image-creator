@@ -1,0 +1,173 @@
+<html>
+
+<head>
+    <!-- start at 16-06 12:25 -->
+    <title>Cordova image creator</title>
+    <meta charset="UTF-8">
+    <script type="text/javascript" src="jszip.min.js"></script>
+    <script type="text/javascript" src="FileSaver.min.js"></script>
+    <script type="text/javascript">
+        let configSet = false;
+        let sourceSet = false;
+
+        let images = [];
+
+        let source = null;
+
+        window.onload = function() {
+            var configInput = document.getElementById('config');
+            configInput.addEventListener("change", parseConfig);
+
+            var sourceInput = document.getElementById('image');
+            sourceInput.addEventListener("change", parseImage);
+
+            var zipButton = document.getElementById('zip');
+            zipButton.addEventListener("click", createImages);
+        };
+
+        function createZip() {
+            var zip = new JSZip();
+                
+            for(let i=0; i< images.length; i++) {
+                let image = images[i];
+                zip.file(image.src, image.blob.split(",")[1], {base64: true});
+            }
+
+            zip.generateAsync({type:"blob"}).then(function(content) {
+                // see FileSaver.js
+                saveAs(content, "icons.zip");
+            });
+        }
+
+        function createImages(e) {
+
+            if(configSet != true || sourceSet != true) {
+                alert("Not all data is set");
+                return;
+            }
+
+            let n = 0;
+            for(let i=0; i< images.length; i++) {
+                let image = images[i];
+
+                let canvas = document.createElement('canvas');
+                let context = canvas.getContext('2d');
+                context.imageSmoothingEnabled = true;
+
+                canvas.width = image.width;
+                canvas.height = image.height;
+
+                context.width = image.width;
+                context.height = image.height;
+
+                let img = new Image();
+                img.onload = function() {
+                    context.drawImage(img, 0, 0, image.width, image.height);
+                    image.blob = canvas.toDataURL("image/png");
+
+                    n++;
+
+                    if(n == images.length) {
+                        createZip();
+                    }
+                }
+
+                img.src = source;
+            }
+        }
+
+        function parseConfig(e) {
+
+            if(e.target.files[0].type != "text/xml") {
+                return false;
+            }
+
+            var reader = new FileReader();
+
+            reader.onload = (theFile) => {
+                images = [];
+
+                var parser = new DOMParser();
+                var xmlDoc = parser.parseFromString(theFile.target.result, "text/xml");
+                
+                var iconSizes = xmlDoc.getElementsByTagName("icon");
+
+                for(let i=0; i<iconSizes.length; i++) {
+                    if(iconSizes[i].getAttribute("src")) 
+                    {
+                        let image = {
+                            src: iconSizes[i].getAttribute("src"),
+                            width: 0,
+                            height: 0,
+                            blob: null
+                        };                        
+
+                        if(iconSizes[i].getAttribute("density")) {
+                            switch(iconSizes[i].getAttribute("density")) {
+                                case "ldpi":
+                                    image.width = 36; 
+                                    image.height = 36;
+                                    break;
+                                case "mdpi":
+                                    image.width = 48; 
+                                    image.height = 48;
+                                    break;
+                                case "hdpi":
+                                    image.width = 72; 
+                                    image.height = 72;
+                                    break;
+                                case "xhdpi":
+                                    image.width = 96; 
+                                    image.height = 96;
+                                    break;
+                                case "xxhdpi":
+                                    image.width = 144; 
+                                    image.height = 144;
+                                    break;
+                                case "xxxhdpi":
+                                    image.width = 192; 
+                                    image.height = 192;
+                                    break;
+                            }
+                        } else if(iconSizes[i].getAttribute("width") && iconSizes[i].getAttribute("height")) {
+                            image.width = + iconSizes[i].getAttribute("width");
+                            image.height = + iconSizes[i].getAttribute("height");
+                        }
+
+                        if(image.width != 0 && image.height != 0) {
+                            images.push(image);
+                        }
+                    }
+                }
+                configSet = (images.length != 0);
+
+            };
+
+            reader.readAsText(e.target.files[0]);
+            return true;
+        }
+
+    function parseImage(e) {
+    	var url = URL.createObjectURL(e.target.files[0]);
+
+        source = url;
+        sourceSet = true;
+    }
+    </script>
+</head>
+
+<body>
+    <h1>SVG to PNG demo</h1>
+    <h2>Select cordova config file</h2>
+    <input type="file" id="config" /> <br/>
+
+    <h2>Select svg source image</h2>
+    <input type="file" id="image" /> <br/>
+	
+    <h2>Run code</h2>
+    <input type="button" id="zip" value="Create images" /> <br/>
+
+
+    <h2>Canvas:</h2>
+</body>
+<html>
