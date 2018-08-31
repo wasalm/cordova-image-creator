@@ -158,6 +158,14 @@
                                 image.width = 1280; 
                                 image.height = 720;
                                 break;
+                            case "land-xxhdpi":
+                                image.width = 1600; 
+                                image.height = 960;
+                                break;
+                            case "land-xxxhdpi":
+                                image.width = 1920; 
+                                image.height = 1280;
+                                break;
                             
                             case "port-hdpi":
                                 image.width = 480; 
@@ -174,6 +182,14 @@
                             case "port-xhdpi":
                                 image.width = 720; 
                                 image.height = 1280;
+                                break;
+                            case "port-xxhdpi":
+                                image.width = 960; 
+                                image.height = 1600;
+                                break;
+                            case "port-xxxhdpi":
+                                image.width = 1280; 
+                                image.height = 1920;
                                 break;
                         }
                     } else if (iconSizes[i].getAttribute("width") && iconSizes[i].getAttribute("height")) {
