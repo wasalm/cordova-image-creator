@@ -192,10 +192,45 @@
                                 image.height = 1920;
                                 break;
                         }
-                    } else if (iconSizes[i].getAttribute("width") && iconSizes[i].getAttribute("height")) {
+                    }
+
+                    if(iconSizes[i].getAttribute("src").endsWith("Default@2x~universal~anyany.png")) {
+                        image.width = 2732; 
+                        image.height = 2732;
+                    }
+
+                    if(iconSizes[i].getAttribute("src").endsWith("Default@2x~universal~comany.png")) {
+                        image.width = 1278; 
+                        image.height = 2732;
+                    }
+
+                    if(iconSizes[i].getAttribute("src").endsWith("Default@2x~universal~comcom.png")) {
+                        image.width = 1334; 
+                        image.height = 750;
+                    }
+
+                    if(iconSizes[i].getAttribute("src").endsWith("Default@3x~universal~anyany.png")) {
+                        image.width = 2208; 
+                        image.height = 2208;
+                    }
+
+                    if(iconSizes[i].getAttribute("src").endsWith("Default@3x~universal~anycom.png")) {
+                        image.width = 2208; 
+                        image.height = 1242;
+                    }
+
+                    if(iconSizes[i].getAttribute("src").endsWith("Default@3x~universal~comany.png")) {
+                        image.width = 1242; 
+                        image.height = 2208;
+                    }
+
+
+                    if (iconSizes[i].getAttribute("width") && iconSizes[i].getAttribute("height")) {
                         image.width = +iconSizes[i].getAttribute("width");
                         image.height = +iconSizes[i].getAttribute("height");
                     }
+
+
 
                     if (image.width != 0 && image.height != 0) {
                         images.push(image);
