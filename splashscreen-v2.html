@@ -1,0 +1,302 @@
+<html>
+
+<head>
+    <!-- start at 16-06 12:25 -->
+    <title>Cordova image creator</title>
+    <meta charset="UTF-8">
+    <script type="text/javascript" src="jszip.min.js"></script>
+    <script type="text/javascript" src="FileSaver.min.js"></script>
+    <script type="text/javascript">
+    let configSet = false;
+    let sourceSet = false;
+    let avdSet = false;
+
+    let images = [];
+
+    let source = null;
+    let avdSource = null;
+    let avdPath = null;
+
+    window.onload = function() {
+        var configInput = document.getElementById('config');
+        configInput.addEventListener("change", parseConfig);
+
+        var sourceInput = document.getElementById('image');
+        sourceInput.addEventListener("change", parseImage);
+
+        var avdInput = document.getElementById('avd');
+        avdInput.addEventListener("change", parseAvd);
+
+        var zipButton = document.getElementById('zip');
+        zipButton.addEventListener("click", createImages);
+    };
+
+    function createZip() {
+        var zip = new JSZip();
+
+        if(avdPath) {
+            console.log(avdSource);
+            zip.file(avdPath, avdSource);
+        }
+
+        for (let i = 0; i < images.length; i++) {
+            let image = images[i];
+            zip.file(image.src, image.blob.split(",")[1], {
+                base64: true
+            });
+        }
+
+        zip.generateAsync({type:"blob"}).then(function(content) {
+            // see FileSaver.js
+            saveAs(content, "splash.zip");
+        });
+    }
+
+    function createImages(e) {
+
+        if (configSet != true || sourceSet != true || avdSet != true) {
+            alert("Not all data is set");
+            return;
+        }
+
+        let canvasOrig = document.createElement('canvas');
+        let contextOrig = canvasOrig.getContext('2d');
+        contextOrig.imageSmoothingEnabled = true;
+
+        canvasOrig.width = 10;
+        canvasOrig.height = 10;
+
+        contextOrig.width = 10;
+        contextOrig.height = 10;
+
+        let imgOrig = new Image();
+        imgOrig.onload = function() {
+            contextOrig.drawImage(imgOrig, 0, 0);
+            let color = contextOrig.getImageData(0, 0, 1, 1);
+
+            let n = 0;
+            for (let i = 0; i < images.length; i++) {
+                let image = images[i];
+
+                let canvas = document.createElement('canvas');
+                let context = canvas.getContext('2d');
+                context.imageSmoothingEnabled = true;
+
+                canvas.width = image.width;
+                canvas.height = image.height;
+
+                context.width = image.width;
+                context.height = image.height;
+
+                //fill background
+                context.beginPath();
+                context.rect(0, 0, image.width, image.height);
+                context.fillStyle = "white";
+                context.fill();
+
+                //fill background
+                context.beginPath();
+                context.rect(0, 0, image.width, image.height);
+                context.fillStyle = "rgba(" + color.data[0] + "," + color.data[1] + "," + color.data[2] + "," + color.data[3] + ")";
+                context.fill();
+
+                let img = new Image();
+                img.onload = function() {
+
+                    if (img.width / img.height > image.width / image.height) {
+                        context.drawImage(img, 0, (image.height - (img.height * image.width / img.width)) / 2, image.width, img.height * image.width / img.width);
+                    } else {
+                        context.drawImage(img, (image.width - (img.width * image.height / img.height)) / 2, 0, img.width * image.height / img.height, image.height);
+                    }
+
+                    image.blob = canvas.toDataURL("image/png");
+
+                    n++;
+
+                    if (n == images.length) {
+                        createZip();
+                    }
+                }
+
+                img.src = source;
+            }
+        }
+
+        imgOrig.src = source;
+
+    }
+
+    function parseConfig(e) {
+
+        if (e.target.files[0].type != "text/xml") {
+            return false;
+        }
+
+        var reader = new FileReader();
+
+        reader.onload = (theFile) => {
+            images = [];
+
+            var parser = new DOMParser();
+            var xmlDoc = parser.parseFromString(theFile.target.result, "text/xml");
+
+            var preferences = xmlDoc.getElementsByTagName("preference");
+            for (let i = 0; i < preferences.length; i++) {
+                if(preferences[i].getAttribute("name") == "AndroidWindowSplashScreenAnimatedIcon") {
+                    avdPath = preferences[i].getAttribute("value");
+                }
+            }
+
+            var iconSizes = xmlDoc.getElementsByTagName("splash");
+
+            for (let i = 0; i < iconSizes.length; i++) {
+                if (iconSizes[i].getAttribute("src")) {
+                    let image = {
+                        src: iconSizes[i].getAttribute("src"),
+                        width: 0,
+                        height: 0,
+                        blob: null
+                    };
+
+                    if (iconSizes[i].getAttribute("density")) {
+                        switch (iconSizes[i].getAttribute("density")) {
+                            case "land-hdpi":
+                                image.width = 800; 
+                                image.height = 480;
+                                break;
+                            case "land-ldpi":
+                                image.width = 320; 
+                                image.height = 200;
+                                break;
+                            case "land-mdpi":
+                                image.width = 480; 
+                                image.height = 320;
+                                break;
+                            case "land-xhdpi":
+                                image.width = 1280; 
+                                image.height = 720;
+                                break;
+                            case "land-xxhdpi":
+                                image.width = 1600; 
+                                image.height = 960;
+                                break;
+                            case "land-xxxhdpi":
+                                image.width = 1920; 
+                                image.height = 1280;
+                                break;
+                            
+                            case "port-hdpi":
+                                image.width = 480; 
+                                image.height = 800;
+                                break;
+                            case "port-ldpi":
+                                image.width = 200; 
+                                image.height = 320;
+                                break;
+                            case "port-mdpi":
+                                image.width = 320; 
+                                image.height = 480;
+                                break;
+                            case "port-xhdpi":
+                                image.width = 720; 
+                                image.height = 1280;
+                                break;
+                            case "port-xxhdpi":
+                                image.width = 960; 
+                                image.height = 1600;
+                                break;
+                            case "port-xxxhdpi":
+                                image.width = 1280; 
+                                image.height = 1920;
+                                break;
+                        }
+                    }
+
+                    if(iconSizes[i].getAttribute("src").endsWith("Default@2x~universal~anyany.png")) {
+                        image.width = 2732; 
+                        image.height = 2732;
+                    }
+
+                    if(iconSizes[i].getAttribute("src").endsWith("Default@2x~universal~comany.png")) {
+                        image.width = 1278; 
+                        image.height = 2732;
+                    }
+
+                    if(iconSizes[i].getAttribute("src").endsWith("Default@2x~universal~comcom.png")) {
+                        image.width = 1334; 
+                        image.height = 750;
+                    }
+
+                    if(iconSizes[i].getAttribute("src").endsWith("Default@3x~universal~anyany.png")) {
+                        image.width = 2208; 
+                        image.height = 2208;
+                    }
+
+                    if(iconSizes[i].getAttribute("src").endsWith("Default@3x~universal~anycom.png")) {
+                        image.width = 2208; 
+                        image.height = 1242;
+                    }
+
+                    if(iconSizes[i].getAttribute("src").endsWith("Default@3x~universal~comany.png")) {
+                        image.width = 1242; 
+                        image.height = 2208;
+                    }
+
+
+                    if (iconSizes[i].getAttribute("width") && iconSizes[i].getAttribute("height")) {
+                        image.width = +iconSizes[i].getAttribute("width");
+                        image.height = +iconSizes[i].getAttribute("height");
+                    }
+
+
+
+                    if (image.width != 0 && image.height != 0) {
+                        images.push(image);
+                    }
+                }
+            }
+            configSet = (images.length != 0);
+
+        };
+
+        reader.readAsText(e.target.files[0]);
+        return true;
+    }
+
+    function parseImage(e) {
+        var url = URL.createObjectURL(e.target.files[0]);
+
+        source = url;
+        sourceSet = true;
+    }
+
+    function parseAvd(e) {
+        var url = e.target.files[0];
+
+        avdSource = url;
+        avdSet = true;
+    }
+    </script>
+</head>
+
+<body>
+    <h1>SVG to PNG demo</h1>
+    <h2>Select cordova config file</h2>
+    <input type="file" id="config" />
+    <br/>
+    <h2>Select svg source image (ios)</h2>
+    <input type="file" id="image" />
+    <br/>
+
+    <h2>Select avd source image</h2>
+    Create it with <a href="https://shapeshifter.design/">https://shapeshifter.design/</a>:
+    <br/>
+    <input type="file" id="avd" />
+    <br/>
+
+    <h2>Run code</h2>
+    <input type="button" id="zip" value="Create images" />
+    <br/>
+    <h2>Canvas:</h2>
+</body>
+<html>
