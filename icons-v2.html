@@ -9,13 +9,16 @@
     <script type="text/javascript">
         let configSet = false;
         let sourceIOSSet = false;
-        let sourceAndroidSet = false;
+        let sourceAndroidFSet = false;
+        let sourceAndroidBSet = false;
 
         let imagesIOS = [];
-        let imagesAndroid = [];
+        let imagesAndroidF = [];
+        let imagesAndroidB = [];
 
         let sourceIOS = null;
-        let sourceAndroid = null;
+        let sourceAndroidF = null;
+        let sourceAndroidB = null;
 
         let colorXMLPath = null;
 
@@ -26,8 +29,11 @@
             var sourceInputIOS = document.getElementById('image-ios');
             sourceInputIOS.addEventListener("change", parseImageIOS);
 
-            var sourceInputAndroid = document.getElementById('image-android');
-            sourceInputAndroid.addEventListener("change", parseImageAndroid);
+            var sourceInputAndroidF = document.getElementById('image-androidF');
+            sourceInputAndroidF.addEventListener("change", parseImageAndroidF);
+
+            var sourceInputAndroidB = document.getElementById('image-androidB');
+            sourceInputAndroidB.addEventListener("change", parseImageAndroidB);
 
             var zipButton = document.getElementById('zip');
             zipButton.addEventListener("click", createImages);
@@ -45,16 +51,22 @@
                 zip.file(image.src, image.blob.split(",")[1], {base64: true});
             }
 
-            uniqueImagesAndroid = imagesAndroid.filter(function(item, pos) {
-                return imagesAndroid.indexOf(item) == pos;
+            uniqueImagesAndroidF = imagesAndroidF.filter(function(item, pos) {
+                return imagesAndroidF.indexOf(item) == pos;
             })
 
-            console.log(uniqueImagesAndroid);
-            //zip.file(avdPath, avdSource);
+            uniqueImagesAndroidB = imagesAndroidB.filter(function(item, pos) {
+                return imagesAndroidB.indexOf(item) == pos;
+            })
 
-            for(let i=0; i< uniqueImagesAndroid.length; i++) {
-                let image = uniqueImagesAndroid[i];
-                zip.file(image, sourceAndroid);
+            for(let i=0; i< uniqueImagesAndroidF.length; i++) {
+                let image = uniqueImagesAndroidF[i];
+                zip.file(image, sourceAndroidF);
+            }
+
+            for(let i=0; i< uniqueImagesAndroidB.length; i++) {
+                let image = uniqueImagesAndroidB[i];
+                zip.file(image, sourceAndroidB);
             }
 
             zip.generateAsync({type:"blob"}).then(function(content) {
@@ -64,7 +76,7 @@
         }
 
         function createImages(e) {
-            if(configSet != true || sourceIOSSet != true || sourceAndroidSet != true) {
+            if(configSet != true || sourceIOSSet != true || sourceAndroidFSet != true || sourceAndroidBSet != true) {
                 alert("Not all data is set");
                 return;
             }
@@ -176,13 +188,17 @@
                         }
                     }
 
+                    if(iconSizes[i].getAttribute("background")) 
+                    {
+                        imagesAndroidB.push(iconSizes[i].getAttribute("background"));
+                    }
 
                     if(iconSizes[i].getAttribute("foreground")) 
                     {
-                        imagesAndroid.push(iconSizes[i].getAttribute("foreground"));
+                        imagesAndroidF.push(iconSizes[i].getAttribute("foreground"));
                     }
                 }
-                configSet = (imagesAndroid.length + imagesIOS.length != 0);
+                configSet = (imagesAndroidF.length + imagesIOS.length != 0);
             };
 
             reader.readAsText(e.target.files[0]);
@@ -195,10 +211,16 @@
         sourceIOSSet = true;
     }
 
-    function parseImageAndroid(e) {
+    function parseImageAndroidF(e) {
         var url = e.target.files[0];
-        sourceAndroid = url;
-        sourceAndroidSet = true;
+        sourceAndroidF = url;
+        sourceAndroidFSet = true;
+    }
+
+    function parseImageAndroidB(e) {
+        var url = e.target.files[0];
+        sourceAndroidB = url;
+        sourceAndroidBSet = true;
     }
     </script>
 </head>
@@ -213,13 +235,13 @@
     <input type="file" id="image-ios" /> <br/>
 
     <h2>Android</h2>
-    <h3>Select icon background color</h2>
-    <input type="text" id="background" value="#FF0000"/> <br/>
-
     <h3>Select avd source image</h3>
     Create it with <a href="https://shapeshifter.design/">https://shapeshifter.design/</a>:
     <br/>
-    <input type="file" id="image-android" /> <br/>
+    <h4>Foreground:</h4>
+    <input type="file" id="image-androidF" /> <br/>
+    <h4>Background:</h4>
+    <input type="file" id="image-androidB" /> <br/>
 	
     <h2>Run code</h2>
     <input type="button" id="zip" value="Create images" /> <br/>
